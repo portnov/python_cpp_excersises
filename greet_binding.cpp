@@ -14,10 +14,15 @@
 //#include <ndarray.hpp>
 //#include <boost/python/numpy.hpp>
 
+#include <Eigen/Dense>
+
 using namespace std;
 //namespace python = boost::python;
 using namespace boost::python;
 //namespace numpy = boost::python::numpy;
+
+using namespace Eigen;
+
 
 void say_greeting(const char* name) {
   cout << "Hello, " << name << "!\n";
@@ -122,6 +127,56 @@ void process(numeric::array ps) {
 
 }
 
+void twice(numeric::array xs) {
+  PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(xs.ptr(), NPY_DOUBLE, NPY_ARRAY_CARRAY);
+  if (! array) {
+    throw WrongTypeError();
+  }
+
+  int dims = PyArray_NDIM(array);
+  if (dims != 2) {
+    throw WrongSizeError();
+  }
+
+  // to avoid memory leaks, let a Boost::Python object manage the array
+  object temp(handle<>(array));
+
+  int dim1 = PyArray_DIM(array, 0);
+  int dim2 = PyArray_DIM(array, 1);
+
+  double* data = static_cast<double*>(PyArray_DATA(array));
+
+  typedef Matrix<double,Dynamic,Dynamic,RowMajor> MyMatrix;
+  MyMatrix matrix = Map<MyMatrix>(data, dim1, dim2);
+  cout << matrix << endl;
+}
+
+void determinant(numeric::array xs) {
+  PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(xs.ptr(), NPY_DOUBLE, NPY_ARRAY_CARRAY);
+  if (! array) {
+    throw WrongTypeError();
+  }
+
+  int dims = PyArray_NDIM(array);
+  if (dims != 2) {
+    throw WrongSizeError();
+  }
+
+  // to avoid memory leaks, let a Boost::Python object manage the array
+  object temp(handle<>(array));
+
+  int dim1 = PyArray_DIM(array, 0);
+  int dim2 = PyArray_DIM(array, 1);
+  if (dim1 != dim2) {
+    throw WrongSizeError();
+  }
+
+  double* data = static_cast<double*>(PyArray_DATA(array));
+
+  typedef Matrix<double,Dynamic,Dynamic,RowMajor> MyMatrix;
+  MyMatrix matrix = Map<MyMatrix>(data, dim1, dim2);
+  cout << matrix.determinant() << endl;
+}
 // numpy::ndarray multiply(numpy::ndarray m, double f) {
 //   return nullptr;
 // }
@@ -137,4 +192,6 @@ BOOST_PYTHON_MODULE(greet) {
   def("say_greeting", say_greeting);
   def("multiply", multiply);
   def("process", process);
+  def("twice", twice);
+  def("determinant", determinant);
 }
