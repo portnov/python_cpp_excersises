@@ -89,12 +89,12 @@ void process(numeric::array ps) {
   int stride1 = PyArray_STRIDE(pairs, 0) / sizeof(double);
   int stride2 = PyArray_STRIDE(pairs, 1) / sizeof(double);
 
-  cout << "Stride 1: " << stride1 << ", 2: " << stride2 << endl;
+  //cout << "Stride 1: " << stride1 << ", 2: " << stride2 << endl;
 
   int dim1 = PyArray_DIM(pairs, 0);
   int dim2 = PyArray_DIM(pairs, 1);
 
-  cout << "Dim 1: " << dim1 << ", 2: " << dim2 << endl;
+  //cout << "Dim 1: " << dim1 << ", 2: " << dim2 << endl;
 
   if (dim2 != 2) {
     throw WrongSizeError();
@@ -111,13 +111,14 @@ void process(numeric::array ps) {
     my_map[v].insert(u);
   }
 
-  for (auto const & entry : my_map) {
+  /*for (auto const & entry : my_map) {
     auto const & key = entry.first;
     auto const & values = entry.second;
     for (auto const & value : values) {
-      cout << "Key: " << key << " => " << value << endl;
+      //cout << "Key: " << key << " => " << value << endl;
     }
-  }
+  }*/
+  cout << "Size: " << my_map.size() << endl;
 
 }
 
