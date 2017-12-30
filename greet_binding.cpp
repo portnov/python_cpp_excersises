@@ -127,7 +127,7 @@ void process(numeric::array ps) {
 
 }
 
-object twice(numeric::array xs) {
+object create_knots_euclidean(numeric::array xs) {
   PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(xs.ptr(), NPY_DOUBLE, NPY_ARRAY_CARRAY);
   if (! array) {
     throw WrongTypeError();
@@ -157,7 +157,7 @@ object twice(numeric::array xs) {
 
   MyMatrix m3 = m2 - m1;
   VectorXd norms = m3.rowwise().norm();
-  cout << "Norms: " << norms << endl;
+  //cout << "Norms: " << norms << endl;
 
   double sum = 0.0;
   for (int idx = 0; idx < (dim1-1); idx++) {
@@ -166,14 +166,14 @@ object twice(numeric::array xs) {
     sum += norm;
   }
 
-  cout << "Cumsum: " << norms << ", sum: " << sum << endl;
+  //cout << "Cumsum: " << norms << ", sum: " << sum << endl;
 
   norms /= sum;
 
-  cout << "Knots: " << norms << endl;
+  //cout << "Knots: " << norms << endl;
 
   double* result_data = norms.data();
-  cout << "First: " << result_data[0] << endl;
+  //cout << "First: " << result_data[0] << endl;
 
   long int result_dims[1];
   result_dims[0] = dim1-1;
@@ -227,6 +227,6 @@ BOOST_PYTHON_MODULE(greet) {
   def("say_greeting", say_greeting);
   def("multiply", multiply);
   def("process", process);
-  def("twice", twice);
+  def("create_knots_euclidean", create_knots_euclidean);
   def("determinant", determinant);
 }

@@ -22,16 +22,21 @@ def process(data):
     #        pass
             #print("Key: {} => {}".format(key, value))
 
-def get_sum(data):
-    return numpy.linalg.norm(data[:-1] - data[1:], axis=1).sum()
+def create_knots_numpy(pts):
+    tmp = numpy.linalg.norm(pts[:-1] - pts[1:], axis=1)
+    tknots = numpy.insert(tmp, 0, 0).cumsum()
+    tknots = tknots / tknots[-1]
+    return tknots
 
-array = numpy.random.rand(50000, 3)
+array = numpy.random.rand(100000, 3)
 
 def test_python():
-    print(get_sum(array))
+    print(create_knots_numpy(array))
 
 def test_cpp():
-    greet.twice(array)
+    knots = greet.create_knots_euclidean(array)
+    knots = numpy.insert(knots, 0, 0)
+    print(knots)
 
 sys.stdout.flush()
 print("Testing C++", file=sys.stderr)
