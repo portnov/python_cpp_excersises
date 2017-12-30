@@ -127,7 +127,7 @@ void process(numeric::array ps) {
 
 }
 
-void twice(numeric::array xs) {
+object twice(numeric::array xs) {
   PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(xs.ptr(), NPY_DOUBLE, NPY_ARRAY_CARRAY);
   if (! array) {
     throw WrongTypeError();
@@ -148,7 +148,42 @@ void twice(numeric::array xs) {
 
   typedef Matrix<double,Dynamic,Dynamic,RowMajor> MyMatrix;
   MyMatrix matrix = Map<MyMatrix>(data, dim1, dim2);
-  cout << matrix << endl;
+
+  MyMatrix m1 = matrix.block(1, 0, (dim1-1), dim2);
+  MyMatrix m2 = matrix.block(0, 0, (dim1-1), dim2);
+
+  //cout << "M1: " << m1 << endl;
+  //cout << "M2: " << m2 << endl;
+
+  MyMatrix m3 = m2 - m1;
+  VectorXd norms = m3.rowwise().norm();
+  cout << "Norms: " << norms << endl;
+
+  double sum = 0.0;
+  for (int idx = 0; idx < (dim1-1); idx++) {
+    double norm = norms(idx);
+    norms(idx) += sum;
+    sum += norm;
+  }
+
+  cout << "Cumsum: " << norms << ", sum: " << sum << endl;
+
+  norms /= sum;
+
+  cout << "Knots: " << norms << endl;
+
+  double* result_data = norms.data();
+  cout << "First: " << result_data[0] << endl;
+
+  long int result_dims[1];
+  result_dims[0] = dim1-1;
+
+  // make the output array, and get access to its data
+  PyObject* result = PyArray_SimpleNewFromData(1, result_dims, NPY_DOUBLE, result_data);
+
+  handle<> handle(result);
+  numeric::array result_array(handle);
+  return result_array.copy();
 }
 
 void determinant(numeric::array xs) {

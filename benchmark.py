@@ -22,19 +22,22 @@ def process(data):
     #        pass
             #print("Key: {} => {}".format(key, value))
 
-array = numpy.random.rand(6,6)
+def get_sum(data):
+    return numpy.linalg.norm(data[:-1] - data[1:], axis=1).sum()
+
+array = numpy.random.rand(50000, 3)
 
 def test_python():
-    numpy.linalg.det(array)
+    print(get_sum(array))
 
 def test_cpp():
-    greet.determinant(array)
+    greet.twice(array)
 
 sys.stdout.flush()
 print("Testing C++", file=sys.stderr)
-print(timeit.timeit("test_cpp()", setup = "from __main__ import test_cpp"), file=sys.stderr)
+print(timeit.timeit("test_cpp()", setup = "from __main__ import test_cpp", number=1000), file=sys.stderr)
 
 sys.stdout.flush()
 print("Testing Python", file=sys.stderr)
-print(timeit.timeit("test_python()", setup = "from __main__ import test_python"), file=sys.stderr)
+print(timeit.timeit("test_python()", setup = "from __main__ import test_python", number=1000), file=sys.stderr)
 
