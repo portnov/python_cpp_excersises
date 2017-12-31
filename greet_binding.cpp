@@ -4,7 +4,8 @@
 #include <boost/python/def.hpp>
 #include <boost/python/module.hpp>
 #include <map>
-//#include <list>
+#include <list>
+#include <vector>
 #include <set>
 
 #include <exception>
@@ -17,7 +18,7 @@
 #include <Eigen/Dense>
 
 using namespace std;
-//namespace python = boost::python;
+namespace python = boost::python;
 using namespace boost::python;
 //namespace numpy = boost::python::numpy;
 
@@ -216,6 +217,80 @@ void determinant(numeric::array xs) {
 //   return nullptr;
 // }
 
+static const int WHITE = 0;
+static const int GRAY = 1;
+static const int BLACK = 2;
+
+typedef int vertex;
+
+void walk(map<int,int> & marks, map<int,set<int>> const & edges_map, std::vector<vertex> & result, int idx) {
+  int color;
+  if (marks.count(idx)) {
+    color = marks[idx];
+  } else {
+    color = WHITE;
+  }
+
+  if (color == GRAY) {
+    throw std::runtime_error("Cycle detected");
+  } else if (color == WHITE) {
+    marks[idx] = GRAY;
+    //cout << "Visiting " << idx << endl;
+    if (edges_map.count(idx)) {
+      for (auto const & next_idx : edges_map.at(idx)) {
+        walk(marks, edges_map, result, next_idx);
+      }
+    }
+    marks[idx] = BLACK;
+    result.insert(result.begin(), idx);
+  }
+}
+
+
+std::vector<vertex> topo_sort(int verts_number, std::vector<std::vector<int>> const & edges) {
+
+  map<int,set<int>> edges_map;
+
+  for (auto const & edge : edges) {
+    auto const & v1 = edge[0];
+    auto const & v2 = edge[1];
+    edges_map[v1].insert(v2);
+  }
+
+  map<int,int> marks;
+  std::vector<vertex> result;
+
+  for (int start_idx = 0; start_idx < verts_number; start_idx++) {
+    //cout << "Starting from " << start_idx << endl;
+    walk(marks, edges_map, result, start_idx);
+  }
+
+  return result;
+}
+
+python::list topo_sort_wrapper(int verts_number, python::list edges) {
+
+  std::vector<std::vector<int>> edges_vector;
+
+  for (int i = 0; i < len(edges); i++) {
+    std::vector<int> new_edge;
+    for (int j = 0; j < len(edges[i]); j++) {
+      int value = python::extract<int>(edges[i][j]);
+      new_edge.push_back(value);
+    }
+    edges_vector.push_back(new_edge);
+  }
+
+  std::vector<vertex> result_vector = topo_sort(verts_number, edges_vector);
+
+  python::list result;
+  for (auto const & item : result_vector) {
+    result.append(item);
+  }
+
+  return result;
+}
+
 void* init_numpy() {
   import_array();
 }
@@ -229,4 +304,5 @@ BOOST_PYTHON_MODULE(greet) {
   def("process", process);
   def("create_knots_euclidean", create_knots_euclidean);
   def("determinant", determinant);
+  def("topo_sort", topo_sort_wrapper);
 }
