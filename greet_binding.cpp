@@ -248,32 +248,18 @@ void walk(map<int,int> & marks, map<int,set<int>> const & edges_map, std::vector
   }
 }
 
-
-std::vector<vertex> topo_sort(int verts_number, std::vector<std::vector<int>> const & edges) {
+python::list topo_sort(int verts_number, python::list edges) {
 
   boost::adjacency_list<> graph(verts_number);
-  for (auto const & edge : edges) {
-    boost::add_edge(edge[0], edge[1], graph);
-  }
-  std::vector<vertex> result;
-  boost::topological_sort(graph, std::back_inserter(result));
-  return result;
-}
-
-python::list topo_sort_wrapper(int verts_number, python::list edges) {
-
-  std::vector<std::vector<int>> edges_vector;
 
   for (int i = 0; i < len(edges); i++) {
-    std::vector<int> new_edge;
-    for (int j = 0; j < len(edges[i]); j++) {
-      int value = python::extract<int>(edges[i][j]);
-      new_edge.push_back(value);
-    }
-    edges_vector.push_back(new_edge);
+    int vertex1 = python::extract<int>(edges[i][0]);
+    int vertex2 = python::extract<int>(edges[i][1]);
+    boost::add_edge(vertex1, vertex2, graph);
   }
 
-  std::vector<vertex> result_vector = topo_sort(verts_number, edges_vector);
+  std::vector<vertex> result_vector;
+  boost::topological_sort(graph, std::back_inserter(result_vector));
 
   python::list result;
   for (auto const & item : result_vector) {
@@ -296,5 +282,5 @@ BOOST_PYTHON_MODULE(greet) {
   def("process", process);
   def("create_knots_euclidean", create_knots_euclidean);
   def("determinant", determinant);
-  def("topo_sort", topo_sort_wrapper);
+  def("topo_sort", topo_sort);
 }

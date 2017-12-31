@@ -111,13 +111,14 @@ def topo_sort_old(verts, edges):
 array = numpy.random.rand(100000, 3)
 
 #N = 10
-N = 10000
+N = 100000
 verts = [(x,x,x) for x in range(N)]
 edges = [(i,i+2) for i in range(N) if i+2 < N]
 edges.append((N-3, 0))
 
 def test_python():
     try:
+        #print(topo_sort(verts, edges))
         print(topo_sort_old(verts, edges))
     except Exception as e:
         print(e, file=sys.stderr)
@@ -134,13 +135,15 @@ def do_test():
     test_cpp()
 
 def do_benchmark():
+    NUMBER = 10
+
     sys.stdout.flush()
     print("Testing C++", file=sys.stderr)
-    print(timeit.timeit("test_cpp()", setup = "from __main__ import test_cpp", number=10), file=sys.stderr)
+    print(timeit.timeit("test_cpp()", setup = "from __main__ import test_cpp", number=NUMBER), file=sys.stderr)
 
     sys.stdout.flush()
     print("Testing Python", file=sys.stderr)
-    print(timeit.timeit("test_python()", setup = "from __main__ import test_python", number=10), file=sys.stderr)
+    print(timeit.timeit("test_python()", setup = "from __main__ import test_python", number=NUMBER), file=sys.stderr)
 
 #do_test()
 do_benchmark()
