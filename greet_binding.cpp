@@ -3,6 +3,8 @@
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/module.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/topological_sort.hpp>
 #include <map>
 #include <list>
 #include <vector>
@@ -249,22 +251,12 @@ void walk(map<int,int> & marks, map<int,set<int>> const & edges_map, std::vector
 
 std::vector<vertex> topo_sort(int verts_number, std::vector<std::vector<int>> const & edges) {
 
-  map<int,set<int>> edges_map;
-
+  boost::adjacency_list<> graph(verts_number);
   for (auto const & edge : edges) {
-    auto const & v1 = edge[0];
-    auto const & v2 = edge[1];
-    edges_map[v1].insert(v2);
+    boost::add_edge(edge[0], edge[1], graph);
   }
-
-  map<int,int> marks;
   std::vector<vertex> result;
-
-  for (int start_idx = 0; start_idx < verts_number; start_idx++) {
-    //cout << "Starting from " << start_idx << endl;
-    walk(marks, edges_map, result, start_idx);
-  }
-
+  boost::topological_sort(graph, std::back_inserter(result));
   return result;
 }
 
