@@ -282,5 +282,5 @@ BOOST_PYTHON_MODULE(greet) {
   def("process", process);
   def("create_knots_euclidean", create_knots_euclidean);
   def("determinant", determinant);
-  def("topo_sort", topo_sort);
+  def("topo_sort", topo_sort, return_value_policy<return_by_value>());
 }
