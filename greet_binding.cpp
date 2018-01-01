@@ -316,17 +316,17 @@ python::list get_components(int verts_number, python::list edges) {
       new_index_map[vertex] = new_index;
       new_index ++;
     }
-    cout << "component[" << i << "]: ";
+    //cout << "component[" << i << "]: ";
     for (auto edge : boost::make_iterator_range(boost::edges(component))) {
       Vertex v1 = boost::source(edge, component);
       Vertex v2 = boost::target(edge, component);
 
       auto i1 = new_index_map[v1];
       auto i2 = new_index_map[v2];
-      cout << i1 << " (old " << v1 << ") --> " << i2 << " (old " << v2 << "); ";
+      //cout << i1 << " (old " << v1 << ") --> " << i2 << " (old " << v2 << "); ";
       edges.append(python::make_tuple(i1, i2));
     }
-    cout << endl;
+    //cout << endl;
     result.append(python::make_tuple(vertices, edges));
   }
 
