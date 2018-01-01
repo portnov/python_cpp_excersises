@@ -5,6 +5,10 @@
 #include <boost/python/module.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/topological_sort.hpp>
+#include <boost/graph/connected_components.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/range/iterator_range.hpp>
 #include <map>
 #include <list>
 #include <vector>
@@ -219,38 +223,11 @@ void determinant(numeric::array xs) {
 //   return nullptr;
 // }
 
-static const int WHITE = 0;
-static const int GRAY = 1;
-static const int BLACK = 2;
-
-typedef int vertex;
-
-void walk(map<int,int> & marks, map<int,set<int>> const & edges_map, std::vector<vertex> & result, int idx) {
-  int color;
-  if (marks.count(idx)) {
-    color = marks[idx];
-  } else {
-    color = WHITE;
-  }
-
-  if (color == GRAY) {
-    throw std::runtime_error("Cycle detected");
-  } else if (color == WHITE) {
-    marks[idx] = GRAY;
-    //cout << "Visiting " << idx << endl;
-    if (edges_map.count(idx)) {
-      for (auto const & next_idx : edges_map.at(idx)) {
-        walk(marks, edges_map, result, next_idx);
-      }
-    }
-    marks[idx] = BLACK;
-    result.insert(result.begin(), idx);
-  }
-}
+typedef int vertex_index;
 
 python::list topo_sort(int verts_number, python::list edges) {
 
-  boost::adjacency_list<> graph(verts_number);
+  boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> graph(verts_number);
 
   for (int i = 0; i < len(edges); i++) {
     int vertex1 = python::extract<int>(edges[i][0]);
@@ -258,12 +235,99 @@ python::list topo_sort(int verts_number, python::list edges) {
     boost::add_edge(vertex1, vertex2, graph);
   }
 
-  std::vector<vertex> result_vector;
+  std::vector<vertex_index> result_vector;
   boost::topological_sort(graph, std::back_inserter(result_vector));
 
   python::list result;
   for (auto const & item : result_vector) {
     result.append(item);
+  }
+
+  return result;
+}
+
+// Create a typedef for the Graph type
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::property<boost::vertex_index_t, int>, boost::property<boost::edge_index_t, int>> Graph;
+
+// typedef subgraph < Graph > SubGraph;
+typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
+typedef boost::graph_traits<Graph> GraphTraits;
+
+// Iterators
+typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
+typedef boost::graph_traits<Graph>::edge_iterator edge_iter;
+
+typedef boost::shared_ptr<std::vector<unsigned long>> vertex_component_map;
+
+struct EdgeInComponent { 
+    vertex_component_map mapping_;
+    unsigned long which_;
+    Graph const & master_;
+
+    EdgeInComponent(vertex_component_map m, unsigned long which, Graph const & master) 
+        : mapping_(m), which_(which), master_(master) {}
+
+    template <typename Edge> bool operator()(Edge const&e) const {
+        return mapping_->at(source(e,master_))==which_
+            || mapping_->at(target(e,master_))==which_;
+    } 
+};
+
+struct VertexInComponent { 
+    vertex_component_map mapping_;
+    unsigned long which_;
+
+    VertexInComponent(vertex_component_map m, unsigned long which)
+        : mapping_(m), which_(which) {}
+
+    template <typename Vertex> bool operator()(Vertex const & v) const {
+        return mapping_->at(v)==which_;
+    } 
+};
+
+typedef boost::filtered_graph<Graph, EdgeInComponent, VertexInComponent> ComponentGraph;
+typedef boost::property_map<ComponentGraph, boost::vertex_index_t>::type VertexIndexMap;
+typedef boost::property_map<ComponentGraph, boost::edge_index_t>::type EdgeIndexMap;
+
+python::list get_components(int verts_number, python::list edges) {
+
+  Graph graph(verts_number);
+  for (int i = 0; i < len(edges); i++) {
+    int vertex1 = python::extract<int>(edges[i][0]);
+    int vertex2 = python::extract<int>(edges[i][1]);
+    boost::add_edge(vertex1, vertex2, graph);
+  }
+
+  vertex_component_map mapping = boost::make_shared<std::vector<unsigned long>>(verts_number);
+  int num_components = boost::connected_components(graph, mapping->data());
+
+  python::list result;
+
+  for (int i = 0; i < num_components; i++) {
+    ComponentGraph component = ComponentGraph(graph, EdgeInComponent(mapping, i, graph), VertexInComponent(mapping, i));
+    std::map<Vertex,int> new_index_map;
+    int new_index = 0;
+    python::list vertices;
+    python::list edges;
+
+    for (auto const & vertex : boost::make_iterator_range(boost::vertices(component))) {
+      vertices.append(vertex);
+      new_index_map[vertex] = new_index;
+      new_index ++;
+    }
+    cout << "component[" << i << "]: ";
+    for (auto edge : boost::make_iterator_range(boost::edges(component))) {
+      Vertex v1 = boost::source(edge, component);
+      Vertex v2 = boost::target(edge, component);
+
+      auto i1 = new_index_map[v1];
+      auto i2 = new_index_map[v2];
+      cout << i1 << " (old " << v1 << ") --> " << i2 << " (old " << v2 << "); ";
+      edges.append(python::make_tuple(i1, i2));
+    }
+    cout << endl;
+    result.append(python::make_tuple(vertices, edges));
   }
 
   return result;
@@ -283,4 +347,6 @@ BOOST_PYTHON_MODULE(greet) {
   def("create_knots_euclidean", create_knots_euclidean);
   def("determinant", determinant);
   def("topo_sort", topo_sort, return_value_policy<return_by_value>());
+  def("get_components", get_components, return_value_policy<return_by_value>());
 }
+

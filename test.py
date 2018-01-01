@@ -5,13 +5,9 @@ import numpy
 
 import greet
 
-array = numpy.random.rand(10, 3)
+edges = [(0,2), (2,3), (1,4), (4,5), (3,6)]
 
-print(array)
-
-#print(numpy.linalg.det(array))
-
-result = greet.twice(array)
+result = greet.get_components(7, edges)
 print(type(result))
 print(result)
 
